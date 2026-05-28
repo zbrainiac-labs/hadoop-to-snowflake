@@ -249,15 +249,15 @@ beeline -u 'jdbc:hive2://localhost:10000/'
 ├── .env                             # Externalized image tags, ports, paths
 ├── requirements.txt                 # Python dependencies (hmsclient, thrift)
 ├── hadoop_test_stack_requirements.md
+├── manifest.yml                     # DCM project manifest
+├── sources/
+│   └── definitions/
+│       └── stage.sql                # DEFINE STAGE template
 ├── config/
 │   ├── core-site.xml                # HDFS NameNode address
 │   ├── hdfs-site.xml                # Replication factor
 │   ├── hive-site.xml                # HiveServer2 web UI settings
 │   └── hue.ini                      # Hue Hive/PostgreSQL connector config
-├── dcm/
-│   ├── manifest.yml                 # DCM project manifest
-│   └── sources/definitions/
-│       └── stage.sql                # DEFINE STAGE template
 ├── scripts/
 │   ├── generate-fake-data.py        # Generates 1650 rows across 3 tables
 │   ├── init-data.sh                 # Loads data into HDFS + Hive + TBLPROPERTIES

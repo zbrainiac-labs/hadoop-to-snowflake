@@ -1,7 +1,7 @@
 workspace/data/
 workspace/export/
 workspace/output/
-dcm/output/
+sources/output/
 *.parquet
 __pycache__/
 *.pyc
