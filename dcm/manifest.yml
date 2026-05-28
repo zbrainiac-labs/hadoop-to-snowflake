@@ -1,0 +1,26 @@
+manifest_version: 2
+type: dcm_project
+
+default_target: DEV
+
+targets:
+  DEV:
+    account_identifier: ZS28104
+    project_name: HAM_DEV.HAM_DCM.HAM_DCM_PROJECT
+    project_owner: ACCOUNTADMIN
+    templating_config: DEV
+
+templating:
+  defaults:
+    domain: HAM
+    env: DEV
+    component: I
+    maturity: RAW
+    version: "001"
+    external_volume: HAM_ICEBERG_VOL
+    s3_prefix: "s3://mdaeppen/hadoop-root"
+    storage_integration: MDAEPPEN_S3_INTEGRATION
+    hive_database: test_db
+  configurations:
+    DEV:
+      env: DEV

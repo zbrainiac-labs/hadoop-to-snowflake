@@ -1,0 +1,10 @@
+workspace/data/
+workspace/export/
+workspace/output/
+dcm/output/
+*.parquet
+__pycache__/
+*.pyc
+.DS_Store
+.env.local
+out/

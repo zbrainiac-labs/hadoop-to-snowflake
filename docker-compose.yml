@@ -1,0 +1,187 @@
+services:
+  namenode:
+    image: sbloodys/hadoop:3.3.6
+    container_name: namenode
+    hostname: namenode
+    user: root
+    command: ["/bin/bash", "-c", "mkdir -p /opt/hadoop/dfs/name && chown -R hadoop:users /opt/hadoop/dfs && su -s /bin/bash hadoop -c 'if [ ! -d /opt/hadoop/dfs/name/current ]; then hdfs namenode -format -force -nonInteractive; fi && hdfs namenode'"]
+    ports:
+      - "${NAMENODE_WEB_PORT}:9870"
+      - "${NAMENODE_RPC_PORT}:9000"
+    environment:
+      HADOOP_HOME: /opt/hadoop
+    volumes:
+      - hdfs-namenode:/opt/hadoop/dfs/name
+      - ./config/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./config/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+    networks:
+      - hadoop-test-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9870/ || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: ${CONTAINER_MEMORY_LIMIT}
+          cpus: "${CONTAINER_CPU_LIMIT}"
+
+  datanode:
+    image: sbloodys/hadoop:3.3.6
+    container_name: datanode
+    hostname: datanode
+    user: root
+    command: ["/bin/bash", "-c", "mkdir -p /opt/hadoop/dfs/data && chown -R hadoop:users /opt/hadoop/dfs && su -s /bin/bash hadoop -c 'hdfs datanode'"]
+    ports:
+      - "${DATANODE_WEB_PORT}:9864"
+    environment:
+      HADOOP_HOME: /opt/hadoop
+    volumes:
+      - hdfs-datanode:/opt/hadoop/dfs/data
+      - ./config/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./config/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+    networks:
+      - hadoop-test-net
+    depends_on:
+      namenode:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9864/ || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: ${CONTAINER_MEMORY_LIMIT}
+          cpus: "${CONTAINER_CPU_LIMIT}"
+
+  metastore:
+    image: apache/hive:${HIVE_VERSION}
+    container_name: metastore
+    hostname: metastore
+    ports:
+      - "${METASTORE_PORT}:9083"
+    environment:
+      SERVICE_NAME: metastore
+      HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
+    volumes:
+      - metastore-derby:/opt/hive/data/metastore_db
+      - hive-warehouse:/opt/hive/data/warehouse
+      - ./config/core-site.xml:/hive_custom_conf/core-site.xml
+      - ./config/hdfs-site.xml:/hive_custom_conf/hdfs-site.xml
+    networks:
+      - hadoop-test-net
+    depends_on:
+      namenode:
+        condition: service_healthy
+      datanode:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9083'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: ${CONTAINER_MEMORY_LIMIT}
+          cpus: "${CONTAINER_CPU_LIMIT}"
+
+  hiveserver2:
+    image: apache/hive:${HIVE_VERSION}
+    container_name: hiveserver2
+    hostname: hiveserver2
+    ports:
+      - "${HIVESERVER2_PORT}:10000"
+      - "${HIVESERVER2_WEB_PORT}:10002"
+    environment:
+      SERVICE_NAME: hiveserver2
+      SERVICE_OPTS: "-Dhive.metastore.uris=thrift://metastore:9083 -Dhive.server2.webui.explain.output=true -Dhive.server2.historic.operation.log.enabled=true -Dhive.server2.webui.max.historic.queries=25"
+      IS_RESUME: "true"
+      HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
+    volumes:
+      - hive-warehouse:/opt/hive/data/warehouse
+      - ./config/core-site.xml:/hive_custom_conf/core-site.xml
+      - ./config/hdfs-site.xml:/hive_custom_conf/hdfs-site.xml
+      - ./config/hive-site.xml:/hive_custom_conf/hive-site.xml
+      - ./workspace:/workspace
+      - ./scripts:/scripts
+    networks:
+      - hadoop-test-net
+    depends_on:
+      metastore:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "beeline -u 'jdbc:hive2://localhost:10000/' -e 'SHOW DATABASES;' 2>/dev/null | grep -q default"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: ${CONTAINER_MEMORY_LIMIT}
+          cpus: "${CONTAINER_CPU_LIMIT}"
+
+  hue-postgres:
+    image: postgres:16-alpine
+    container_name: hue-postgres
+    hostname: hue-postgres
+    environment:
+      POSTGRES_USER: hue
+      POSTGRES_PASSWORD: hue
+      POSTGRES_DB: hue
+    volumes:
+      - hue-postgres-data:/var/lib/postgresql/data
+    networks:
+      - hadoop-test-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hue"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  hue:
+    image: gethue/hue:${HUE_VERSION}
+    platform: linux/amd64
+    container_name: hue
+    hostname: hue
+    ports:
+      - "${HUE_PORT}:8888"
+    volumes:
+      - ./config/hue.ini:/usr/share/hue/desktop/conf/z-hue.ini
+    networks:
+      - hadoop-test-net
+    depends_on:
+      hiveserver2:
+        condition: service_healthy
+      hue-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/ || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: ${CONTAINER_MEMORY_LIMIT}
+          cpus: "${CONTAINER_CPU_LIMIT}"
+
+volumes:
+  hdfs-namenode:
+  hdfs-datanode:
+  metastore-derby:
+  hive-warehouse:
+  hue-postgres-data:
+
+networks:
+  hadoop-test-net:
+    driver: bridge
