@@ -5,9 +5,9 @@ default_target: DEV
 
 targets:
   DEV:
-    account_identifier: ZS28104
+    account_identifier: SFSEEUROPE-DEMO_MDAEPPEN
     project_name: HAM_DEV.HAM_DCM.HAM_DCM_PROJECT
-    project_owner: ACCOUNTADMIN
+    project_owner: CICD
     templating_config: DEV
 
 templating:
