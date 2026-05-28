@@ -208,6 +208,21 @@ Local, containerized Hadoop test stack for validating the Hive-to-Iceberg migrat
 
 ---
 
+## 11. Documentation and Positioning
+
+| Id | Short Description | Status |
+| --- | --- | --- |
+| RQ-088 | README positions the repo as a migration showcase (not a test stack) with a clear one-sentence value proposition in the title and opening paragraph. | Implemented |
+| RQ-089 | README includes a "Why Migrate" section explaining operational and architectural benefits of moving from Hadoop/Hive to Snowflake. | Implemented |
+| RQ-090 | README includes a numbered migration flow (5 steps) with a visual diagram showing the end-to-end conversion path from HMS metadata to Snowflake artifacts. | Implemented |
+| RQ-091 | README includes a formal naming convention reference table documenting all CLI parameters and their mapping to Snowflake object names. | Implemented |
+| RQ-092 | README project structure section matches the actual repository layout (no phantom files, no incorrect root prefix). | Implemented |
+| RQ-093 | Terminology is consistent: one canonical term ("Hive/HMS to Snowflake Managed Iceberg Migration") is defined and used throughout README and script docstrings. | Implemented |
+| RQ-094 | GitHub repository has a description and at least 5 relevant topics set for discoverability. | Implemented |
+| RQ-095 | README separates migration showcase content (value, flow, artifacts, naming) from operational how-to (quickstart, environment, troubleshooting). | Implemented |
+
+---
+
 ## Change Log
 
 | Version | Date | Change |
@@ -219,6 +234,7 @@ Local, containerized Hadoop test stack for validating the Hive-to-Iceberg migrat
 | 0.5 | 2026-05-26 | Replaced MinIO migration demo (Section 9) with Snowflake-managed Iceberg migration (CATALOG='SNOWFLAKE'). Removed MC-007 (MinIO). Phase 5 now exports Parquet from HDFS to S3 and generates Snowflake-managed Iceberg DDL + COPY INTO with ADD_FILES_REFERENCE. |
 | 0.6 | 2026-05-26 | Added Section 10: Naming Standards, Tags, DCM (RQ-076 through RQ-081). Applied naming: HAM_DEV.HAM_RAW_V001.HAMI_RAW_TB_*. Created HAM_ICEBERG_VOL for s3://mdaeppen/hadoop-root/. Dropped HADOOP_MIGRATION. Cleaned s3://mdaeppen/glue/hadoop-root/. Note: ADD_FILES_REFERENCE not supported for Snowflake-managed Iceberg — using standard COPY INTO. |
 | 0.7 | 2026-05-26 | Added RQ-082 through RQ-087 (TBLPROPERTIES tags, pii_map, tag DDL generation). All implemented. Export script now generates `tags.sql` per table with CREATE TAG + table-level SET TAG + column-level PII SET TAG. DCM manifest (dcm_manifest.yml) and DEFINE statements generated automatically. TBLPROPERTIES set inline in CREATE TABLE (init-data.sh). |
+| 0.8 | 2026-05-28 | Added Section 11: Documentation and Positioning (RQ-088 through RQ-095). README rewritten as migration showcase. Added "Why Migrate" section, migration flow diagram, naming convention reference, terminology glossary. Fixed project structure. Set GitHub description and topics. Added DataOpsBackbone CI/CD workflow. |
 
 ---
 

@@ -1,0 +1,16 @@
+name: Update Local Repository and Run Sonar Scanner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pipeline:
+    uses: zbrainiac-labs/DataOpsBackbone/.github/workflows/dataops-pipeline.yml@main
+    with:
+      SOURCE_DATABASE: HAM_DEV
+      SOURCE_SCHEMA: HAM_DCM
+      DCM_PROJECT_IDENTIFIER: HAM_DEV.HAM_DCM.HAM_DCM_PROJECT
+      DCM_TARGET: DEV
+    secrets: inherit

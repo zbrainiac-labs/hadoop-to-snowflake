@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Hive HMS to Snowflake Horizon Iceberg (zero-copy) export script.
+"""Hive/HMS to Snowflake Managed Iceberg -- Migration Export Script.
 
 Connects to HiveServer2 via Beeline (docker exec), discovers all tables in a database,
-extracts full metadata, and generates Snowflake-managed Iceberg DDL,
-distcp commands (HDFS -> S3), and COPY INTO statements per table.
+extracts full metadata (columns, types, comments, partitions, TBLPROPERTIES), and generates:
+- Snowflake-managed Iceberg DDL (CREATE ICEBERG TABLE ... CATALOG='SNOWFLAKE')
+- DCM declarative DEFINE statements and manifest
+- Governance tags (CREATE TAG + SET TAG for table-level and column-level PII)
+- hadoop distcp commands (HDFS -> S3)
+- COPY INTO statements for data loading
 """
 
 import argparse
