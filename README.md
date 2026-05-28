@@ -55,11 +55,11 @@ sample data     + register Hive     from Hive           Snowflake           to S
                                                      └── manifest.json
 ```
 
-1. **Generate sample Parquet data** -- `scripts/generate-fake-data.py` creates 1650 rows across 3 related tables with governance TBLPROPERTIES baked in.
-2. **Load into HDFS and register as Hive tables** -- `scripts/init-data.sh` uploads Parquet to HDFS, creates external tables with comments, partitions, and governance properties (`domain`, `data_owner`, `sensitivity`, `pii_map`).
+1. **Generate sample Parquet data** -- `demo-scripts/generate-fake-data.py` creates 1650 rows across 3 related tables with governance TBLPROPERTIES baked in.
+2. **Load into HDFS and register as Hive tables** -- `demo-scripts/init-data.sh` uploads Parquet to HDFS, creates external tables with comments, partitions, and governance properties (`domain`, `data_owner`, `sensitivity`, `pii_map`).
 3. **Read metadata from Hive Metastore** -- The export script connects via Beeline, runs `DESCRIBE FORMATTED` for each table, and extracts columns, types, comments, partition keys, storage format, HDFS location, and all TBLPROPERTIES.
 4. **Convert to Snowflake artifacts** -- Generates Iceberg DDL, DCM DEFINE statements, COPY INTO, governance tags (CREATE TAG + SET TAG), distcp commands, and a full manifest.
-5. **Export Parquet to S3** -- `scripts/export-to-s3.sh` copies files from HDFS preserving partition structure for Snowflake consumption.
+5. **Export Parquet to S3** -- `demo-scripts/export-to-s3.sh` copies files from HDFS preserving partition structure for Snowflake consumption.
 
 ---
 
@@ -114,7 +114,7 @@ All generated Snowflake objects follow a consistent naming standard controlled b
 ```bash
 # Generate fake Parquet data (host-side, requires pyarrow)
 pip install pyarrow
-python3 scripts/generate-fake-data.py
+python3 demo-scripts/generate-fake-data.py
 
 # Start the full stack (6 containers)
 docker compose up -d
@@ -123,21 +123,21 @@ docker compose up -d
 docker compose ps
 
 # Load sample data into HDFS + Hive (run from host)
-./scripts/init-data.sh
+./demo-scripts/init-data.sh
 
 # Run validation
-./scripts/validate.sh
+./demo-scripts/validate.sh
 
 # Generate Snowflake Iceberg DDL + DCM + tags from HMS
 pip install hmsclient thrift
-python3 scripts/hive_hms_to_horizon_zero_copy.py \
+python3 demo-scripts/hive_hms_to_horizon_zero_copy.py \
   --database test_db \
   --external-volume HAM_ICEBERG_VOL \
   --object-store-prefix s3://mdaeppen/hadoop-root \
   --domain HAM --env DEV --component I --maturity RAW --version 001
 
 # Export Parquet from HDFS to S3
-./scripts/export-to-s3.sh
+./demo-scripts/export-to-s3.sh
 
 # Stop the stack
 docker compose down
@@ -214,7 +214,7 @@ These credentials are for local testing only.
 
 ### Sample Data
 
-After running `./scripts/init-data.sh`:
+After running `./demo-scripts/init-data.sh`:
 
 - **Database**: `test_db`
 - **Tables**: 3 related tables (master + 2 detail)
@@ -258,7 +258,7 @@ beeline -u 'jdbc:hive2://localhost:10000/'
 │   ├── hdfs-site.xml                # Replication factor
 │   ├── hive-site.xml                # HiveServer2 web UI settings
 │   └── hue.ini                      # Hue Hive/PostgreSQL connector config
-├── scripts/
+├── demo-scripts/
 │   ├── generate-fake-data.py        # Generates 1650 rows across 3 tables
 │   ├── init-data.sh                 # Loads data into HDFS + Hive + TBLPROPERTIES
 │   ├── hive_hms_to_horizon_zero_copy.py  # HMS -> Snowflake DDL + DCM + tags
