@@ -558,9 +558,34 @@ def main():
     parser.add_argument("--maturity", default="RAW", help="Naming standard: maturity level (default: RAW)")
     parser.add_argument("--version", default="001", help="Naming standard: schema version (default: 001)")
     parser.add_argument("--output-dir", default="workspace/output", help="Output directory (default: workspace/output)")
+    parser.add_argument("--ranger-url", default=None, help="Ranger Admin URL for live policy export (e.g. http://localhost:6080)")
+    parser.add_argument("--ranger-export", default=None, help="Path to Ranger policy export JSON file (offline mode)")
+    parser.add_argument("--ranger-service", default="test_db_hive", help="Ranger service name (default: test_db_hive)")
 
     args = parser.parse_args()
     exported, skipped = process_database(args)
+
+    # Optionally run Ranger policy conversion
+    if args.ranger_url or args.ranger_export:
+        print("\n--- Ranger Policy Export ---")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        ranger_script = os.path.join(script_dir, "ranger_to_snowflake.py")
+        ranger_cmd = [
+            sys.executable, ranger_script,
+            "--domain", args.domain,
+            "--env", args.env,
+            "--component", args.component,
+            "--maturity", args.maturity,
+            "--version", args.version,
+            "--output-dir", args.output_dir,
+        ]
+        if args.ranger_url:
+            ranger_cmd.extend(["--ranger-url", args.ranger_url, "--service-name", args.ranger_service])
+        else:
+            ranger_cmd.extend(["--ranger-export", args.ranger_export])
+        result = subprocess.run(ranger_cmd, capture_output=False)
+        if result.returncode != 0:
+            print("WARNING: Ranger policy conversion failed (non-fatal)")
 
     if exported == 0 and skipped > 0:
         sys.exit(1)

@@ -38,47 +38,116 @@ The key challenge in migration is not moving files. It is **preserving metadata,
 
 ```
 Step 1          Step 2              Step 3              Step 4              Step 5
-Generate        Load into HDFS      Read metadata       Convert to          Export Parquet
-sample data     + register Hive     from Hive           Snowflake           to S3
-(Parquet)       external tables     Metastore           artifacts
+Generate        Load into HDFS      Read metadata       Convert to          Convert Ranger
+sample data     + register Hive     from Hive           Snowflake           policies to
+(Parquet)       external tables     Metastore           artifacts           Snowflake governance
 
- [Host]    -->   [HDFS + Hive]  -->  [HMS Thrift]  -->  [Python Script] --> [S3 Bucket]
-                                                              |
-                                                              v
+ [Host]    -->   [HDFS + Hive]  -->  [HMS Thrift]  -->  [Python Script] --> [Ranger Export]
+                                                              |                   |
+                                                              v                   v
                                                      workspace/output/
                                                      ├── create_iceberg_table.sql
                                                      ├── define_table.sql (DCM)
                                                      ├── copy_into.sql
                                                      ├── tags.sql
+                                                     ├── tag_based_masking.sql (from Ranger)
+                                                     ├── row_access_policies.sql (from Ranger)
+                                                     ├── grants.sql (from Ranger)
                                                      ├── distcp.sh
                                                      ├── dcm_manifest.yml
                                                      └── manifest.json
+
+Step 6          Step 7              Step 8
+Export Parquet  Deploy to           Apply governance
+to Iceberg vol  Snowflake           (tags, masking, RAP, grants)
+
+ [HDFS] -> [local] -> [External Volume bucket]    [Snowflake]
+  hdfs dfs get          aws s3 sync                snow dcm deploy
+                                                   CREATE ICEBERG TABLE
+                                                   COPY INTO
+                                                   tags.sql
+                                                   tag_based_masking.sql
+                                                   row_access_policies.sql
+                                                   grants.sql
 ```
 
 1. **Generate sample Parquet data** -- `demo-scripts/generate-fake-data.py` creates 1650 rows across 3 related tables with governance TBLPROPERTIES baked in.
 2. **Load into HDFS and register as Hive tables** -- `demo-scripts/init-data.sh` uploads Parquet to HDFS, creates external tables with comments, partitions, and governance properties (`domain`, `data_owner`, `sensitivity`, `pii_map`).
 3. **Read metadata from Hive Metastore** -- The export script connects via Beeline, runs `DESCRIBE FORMATTED` for each table, and extracts columns, types, comments, partition keys, storage format, HDFS location, and all TBLPROPERTIES.
 4. **Convert to Snowflake artifacts** -- Generates Iceberg DDL, DCM DEFINE statements, COPY INTO, governance tags (CREATE TAG + SET TAG), distcp commands, and a full manifest.
-5. **Export Parquet to S3** -- `demo-scripts/export-to-s3.sh` copies files from HDFS preserving partition structure for Snowflake consumption.
+5. **Convert Ranger policies** -- Parses Ranger policy export (JSON fixture or live API), converts column masking to tag-based masking policy, row filters to row access policies, and access rules to GRANT statements.
+6. **Export Parquet data** -- `demo-scripts/export-to-s3.sh` copies Parquet from HDFS to local staging (`workspace/export/`), then uploads to the storage bucket defined by the Snowflake-managed Iceberg table's external volume (`aws s3 sync`).
+7. **DCM Plan and Deploy** -- `snow dcm deploy` creates Iceberg tables, stages, and loads data via COPY INTO on Snowflake.
+8. **Apply governance** -- Executes generated `tags.sql`, `tag_based_masking.sql`, `row_access_policies.sql`, and `grants.sql` against the deployed tables.
+
+---
+
+## Ranger Policy Migration
+
+Apache Ranger provides fine-grained access control, column masking, and row-level filtering for Hive. This showcase demonstrates **automated conversion** of Ranger policies into Snowflake-native governance objects.
+
+### Before/After Demo
+
+| Step | Hive + Ranger | Snowflake |
+| --- | --- | --- |
+| Query as analyst | `beeline -n analyst1` | `USE ROLE DATA_ANALYST` |
+| Email column | SHA-256 hash (Ranger mask) | SHA-256 hash (tag-based masking policy) |
+| Country filter | Only CH rows (Ranger row filter) | Only CH rows (row access policy) |
+| Access control | Ranger group -> ALLOW SELECT | Snowflake role -> GRANT SELECT |
+
+### Ranger-to-Snowflake Mapping
+
+| Ranger Concept | Snowflake Equivalent |
+| --- | --- |
+| Column masking (MASK_HASH, MASK_SHOW_FIRST_4) | Tag-based masking policy (`ALTER TAG PII SET MASKING POLICY`) |
+| Row-level filter (`country = 'CH'`) | Row access policy (`CREATE ROW ACCESS POLICY`) |
+| Resource access (group -> SELECT) | Role-based GRANT (`GRANT SELECT TO ROLE`) |
+| User/group | Snowflake role (group name uppercased) |
+
+### Tag-Based Masking (Enterprise Pattern)
+
+Instead of attaching individual masking policies per column, this showcase uses the tag-based approach:
+
+```sql
+-- ONE policy that auto-applies to ALL columns tagged PII
+CREATE MASKING POLICY PII_AUTO_MASK AS (val VARCHAR) RETURNS VARCHAR ->
+  CASE
+    WHEN CURRENT_ROLE() IN ('DATA_ENGINEER', 'ADMIN') THEN val
+    WHEN SYSTEM$GET_TAG_ON_CURRENT_COLUMN('PII') = 'sha2' THEN SHA2(val, 256)
+    WHEN SYSTEM$GET_TAG_ON_CURRENT_COLUMN('PII') = 'mask' THEN CONCAT(LEFT(val,1), '***')
+    ELSE '***'
+  END;
+
+-- Attach to the PII tag (auto-applies to any column with SET TAG PII = '...')
+ALTER TAG PII SET MASKING POLICY PII_AUTO_MASK;
+```
+
+### Ranger UI
+
+If you deploy Apache Ranger separately, the conversion script supports live export via `--ranger-url http://<ranger-host>:6080`. For this showcase, a static policy export fixture (`fixtures/ranger_policies.json`) demonstrates the same conversion flow without requiring the Ranger containers.
 
 ---
 
 ## Generated Artifacts
 
-After running the export script, `workspace/output/` contains:
+After running the export script with `--ranger-url`, `workspace/output/` contains:
 
 ```
 workspace/output/
 ├── manifest.json                    # Full inventory of all tables processed
 ├── dcm_manifest.yml                 # DCM declarative deployment manifest
 ├── summary.txt                      # Human-readable migration report
+├── ranger_summary.txt               # Ranger policy conversion report
+├── tag_based_masking.sql            # Single tag-based masking policy (from Ranger)
 ├── customers/
 │   ├── create_iceberg_table.sql     # CREATE ICEBERG TABLE (imperative DDL)
 │   ├── define_table.sql             # DEFINE ICEBERG TABLE (DCM declarative)
 │   ├── copy_into.sql                # COPY INTO with MATCH_BY_COLUMN_NAME
 │   ├── distcp.sh                    # hadoop distcp HDFS -> S3
 │   ├── tags.sql                     # CREATE TAG + SET TAG (table + column PII)
-│   └── properties.json              # Raw TBLPROPERTIES from Hive
+│   ├── properties.json              # Raw TBLPROPERTIES from Hive
+│   ├── row_access_policies.sql      # Row access policies (from Ranger)
+│   └── grants.sql                   # Role creation + GRANTs (from Ranger)
 ├── customer_transactions/           # Same structure per table
 └── transaction_disputes/            # Same structure per table
 ```
@@ -125,19 +194,20 @@ docker compose ps
 # Load sample data into HDFS + Hive (run from host)
 ./demo-scripts/init-data.sh
 
-# Run validation
-./demo-scripts/validate.sh
-
-# Generate Snowflake Iceberg DDL + DCM + tags from HMS
+# Generate Snowflake Iceberg DDL + DCM + tags + Ranger policies
 pip install hmsclient thrift
 python3 demo-scripts/hive_hms_to_horizon_zero_copy.py \
   --database test_db \
   --external-volume HAM_ICEBERG_VOL \
   --object-store-prefix s3://mdaeppen/hadoop-root \
-  --domain HAM --env DEV --component I --maturity RAW --version 001
+  --domain HAM --env DEV --component I --maturity RAW --version 001 \
+  --ranger-export fixtures/ranger_policies.json
 
 # Export Parquet from HDFS to S3
 ./demo-scripts/export-to-s3.sh
+
+# Or run the full E2E demo (clean from scratch, 14 steps)
+./demo-scripts/run-e2e-demo.sh
 
 # Stop the stack
 docker compose down
@@ -245,11 +315,12 @@ beeline -u 'jdbc:hive2://localhost:10000/'
 ```
 .
 ├── README.md
-├── docker-compose.yml
+├── docker-compose.yml               # 9-container stack (HDFS, Hive, Ranger, Hue)
 ├── .env                             # Externalized image tags, ports, paths
 ├── requirements.txt                 # Python dependencies (hmsclient, thrift)
 ├── hadoop_test_stack_requirements.md
 ├── manifest.yml                     # DCM project manifest
+├── pre_deploy.sql                   # CI/CD bootstrap (database, schemas, DCM project)
 ├── sources/
 │   └── definitions/
 │       └── stage.sql                # DEFINE STAGE template
@@ -258,17 +329,22 @@ beeline -u 'jdbc:hive2://localhost:10000/'
 │   ├── hdfs-site.xml                # Replication factor
 │   ├── hive-site.xml                # HiveServer2 web UI settings
 │   └── hue.ini                      # Hue Hive/PostgreSQL connector config
+├── fixtures/
+│   └── ranger_policies.json         # Sample Ranger policy export (10 policies)
 ├── demo-scripts/
 │   ├── generate-fake-data.py        # Generates 1650 rows across 3 tables
 │   ├── init-data.sh                 # Loads data into HDFS + Hive + TBLPROPERTIES
 │   ├── hive_hms_to_horizon_zero_copy.py  # HMS -> Snowflake DDL + DCM + tags
+│   ├── ranger_to_snowflake.py       # Ranger policies -> masking + RAP + grants
 │   ├── export-to-s3.sh             # HDFS -> S3 upload
 │   ├── validate.sh                  # Full acceptance checklist
-│   └── run-e2e-demo.sh             # End-to-end demo runner
+│   └── run-e2e-demo.sh             # 14-step E2E demo (clean from scratch)
+├── sqlunit/
+│   └── tests.sqltest                # SQL validation tests for CI/CD
 └── workspace/
     ├── data/                        # Generated Parquet partitions
     ├── export/                      # HDFS export staging
-    └── output/                      # Generated DDL, DCM, tags, manifests
+    └── output/                      # Generated DDL, DCM, tags, policies, manifests
 ```
 
 ---

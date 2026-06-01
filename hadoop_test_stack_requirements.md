@@ -208,6 +208,25 @@ Local, containerized Hadoop test stack for validating the Hive-to-Iceberg migrat
 
 ---
 
+## 12. Apache Ranger Policy Migration
+
+| Id | Short Description | Status |
+| --- | --- | --- |
+| RQ-096 | Ranger Admin container (port 6080) with PostgreSQL backend included in docker-compose.yml. | Implemented |
+| RQ-097 | Ranger-Hive plugin installed in HiveServer2 via custom Dockerfile. Policies enforced on Hive queries. | Implemented |
+| RQ-098 | 10 pre-loaded Ranger policies (3 access, 4 masking, 3 row-filter) bootstrapped via REST API after startup. | Implemented |
+| RQ-099 | Before/after demo: beeline as analyst1 shows Ranger-enforced masking; Snowflake query with DATA_ANALYST role shows equivalent masking. | Implemented |
+| RQ-100 | Export script fetches policies live from Ranger REST API (GET /service/plugins/policies/exportJson). | Implemented |
+| RQ-101 | Tag-based masking policy generated: single CREATE MASKING POLICY + ALTER TAG PII SET MASKING POLICY auto-applies to all PII-tagged columns. | Implemented |
+| RQ-102 | Row access policies generated from Ranger row-filter policies: CREATE ROW ACCESS POLICY per group/table combination. | Implemented |
+| RQ-103 | GRANT statements generated from Ranger access policies: CREATE ROLE + GRANT privilege TO ROLE per group. | Implemented |
+| RQ-104 | E2E test (14-step clean-from-scratch) proves before/after governance equivalence between Hive+Ranger and Snowflake. | Implemented |
+| RQ-105 | Ranger masking types mapped to Snowflake: MASK, MASK_HASH, MASK_SHOW_FIRST_4, MASK_SHOW_LAST_4, MASK_NULL, MASK_DATE_SHOW_YEAR. | Implemented |
+| RQ-106 | Group-to-role mapping: Ranger group names converted to uppercase Snowflake roles with GRANT USAGE on database/schema. | Implemented |
+| RQ-107 | Tag-based masking auto-applies to any future column tagged PII without additional policy attachment. | Implemented |
+
+---
+
 ## 11. Documentation and Positioning
 
 | Id | Short Description | Status |
@@ -235,6 +254,7 @@ Local, containerized Hadoop test stack for validating the Hive-to-Iceberg migrat
 | 0.6 | 2026-05-26 | Added Section 10: Naming Standards, Tags, DCM (RQ-076 through RQ-081). Applied naming: HAM_DEV.HAM_RAW_V001.HAMI_RAW_TB_*. Created HAM_ICEBERG_VOL for s3://mdaeppen/hadoop-root/. Dropped HADOOP_MIGRATION. Cleaned s3://mdaeppen/glue/hadoop-root/. Note: ADD_FILES_REFERENCE not supported for Snowflake-managed Iceberg — using standard COPY INTO. |
 | 0.7 | 2026-05-26 | Added RQ-082 through RQ-087 (TBLPROPERTIES tags, pii_map, tag DDL generation). All implemented. Export script now generates `tags.sql` per table with CREATE TAG + table-level SET TAG + column-level PII SET TAG. DCM manifest (dcm_manifest.yml) and DEFINE statements generated automatically. TBLPROPERTIES set inline in CREATE TABLE (init-data.sh). |
 | 0.8 | 2026-05-28 | Added Section 11: Documentation and Positioning (RQ-088 through RQ-095). README rewritten as migration showcase. Added "Why Migrate" section, migration flow diagram, naming convention reference, terminology glossary. Fixed project structure. Set GitHub description and topics. Added DataOpsBackbone CI/CD workflow. |
+| 0.9 | 2026-05-28 | Added Section 12: Apache Ranger Policy Migration (RQ-096 through RQ-107). Added Ranger Admin + DB containers, Ranger-Hive plugin in HiveServer2, 10 pre-loaded policies, ranger_to_snowflake.py conversion script with tag-based masking, row access policies, and grants generation. Rewrote E2E test as 14-step clean-from-scratch flow. |
 
 ---
 

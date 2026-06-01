@@ -110,7 +110,7 @@ services:
       - ./config/hdfs-site.xml:/hive_custom_conf/hdfs-site.xml
       - ./config/hive-site.xml:/hive_custom_conf/hive-site.xml
       - ./workspace:/workspace
-      - ./scripts:/scripts
+      - ./demo-scripts:/scripts
     networks:
       - hadoop-test-net
     depends_on:
