@@ -15,11 +15,45 @@
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["*"], "isExcludes": false, "isRecursive": false},
-        "column": {"values": ["*"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "*"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "*"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
-      "policyItems": [{"accesses": [{"type": "select", "isAllowed": true}], "users": [], "groups": ["data_analysts"], "roles": [], "conditions": [], "delegateAdmin": false}],
+      "policyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "data_analysts"
+          ],
+          "roles": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }
+      ],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
@@ -34,11 +68,49 @@
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["customer_transactions"], "isExcludes": false, "isRecursive": false},
-        "column": {"values": ["*"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "customer_transactions"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "*"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
-      "policyItems": [{"accesses": [{"type": "select", "isAllowed": true}, {"type": "update", "isAllowed": true}], "users": [], "groups": ["payments_team"], "roles": [], "conditions": [], "delegateAdmin": false}],
+      "policyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            },
+            {
+              "type": "update",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "payments_team"
+          ],
+          "roles": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }
+      ],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
@@ -53,11 +125,49 @@
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["transaction_disputes"], "isExcludes": false, "isRecursive": false},
-        "column": {"values": ["*"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "transaction_disputes"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "*"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
-      "policyItems": [{"accesses": [{"type": "select", "isAllowed": true}, {"type": "update", "isAllowed": true}], "users": [], "groups": ["compliance_team"], "roles": [], "conditions": [], "delegateAdmin": false}],
+      "policyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            },
+            {
+              "type": "update",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "compliance_team"
+          ],
+          "roles": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }
+      ],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
@@ -72,15 +182,53 @@
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["customers"], "isExcludes": false, "isRecursive": false},
-        "column": {"values": ["email"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "customers"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "email"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
       "policyItems": [],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
-      "dataMaskPolicyItems": [{"accesses": [{"type": "select", "isAllowed": true}], "users": [], "groups": ["data_analysts"], "roles": [], "conditions": [], "dataMaskInfo": {"dataMaskType": "MASK_HASH", "conditionExpr": "", "valueExpr": ""}}],
+      "dataMaskPolicyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "data_analysts"
+          ],
+          "roles": [],
+          "conditions": [],
+          "dataMaskInfo": {
+            "dataMaskType": "MASK_HASH",
+            "conditionExpr": "",
+            "valueExpr": ""
+          }
+        }
+      ],
       "rowFilterPolicyItems": []
     },
     {
@@ -91,15 +239,53 @@
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["customers"], "isExcludes": false, "isRecursive": false},
-        "column": {"values": ["first_name"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "customers"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "first_name"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
       "policyItems": [],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
-      "dataMaskPolicyItems": [{"accesses": [{"type": "select", "isAllowed": true}], "users": [], "groups": ["data_analysts"], "roles": [], "conditions": [], "dataMaskInfo": {"dataMaskType": "MASK_SHOW_FIRST_4", "conditionExpr": "", "valueExpr": ""}}],
+      "dataMaskPolicyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "data_analysts"
+          ],
+          "roles": [],
+          "conditions": [],
+          "dataMaskInfo": {
+            "dataMaskType": "MASK_SHOW_FIRST_4",
+            "conditionExpr": "",
+            "valueExpr": ""
+          }
+        }
+      ],
       "rowFilterPolicyItems": []
     },
     {
@@ -110,15 +296,53 @@
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["customers"], "isExcludes": false, "isRecursive": false},
-        "column": {"values": ["last_name"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "customers"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "last_name"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
       "policyItems": [],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
-      "dataMaskPolicyItems": [{"accesses": [{"type": "select", "isAllowed": true}], "users": [], "groups": ["data_analysts"], "roles": [], "conditions": [], "dataMaskInfo": {"dataMaskType": "MASK", "conditionExpr": "", "valueExpr": ""}}],
+      "dataMaskPolicyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "data_analysts"
+          ],
+          "roles": [],
+          "conditions": [],
+          "dataMaskInfo": {
+            "dataMaskType": "MASK",
+            "conditionExpr": "",
+            "valueExpr": ""
+          }
+        }
+      ],
       "rowFilterPolicyItems": []
     },
     {
@@ -129,52 +353,119 @@
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["customer_transactions"], "isExcludes": false, "isRecursive": false},
-        "column": {"values": ["transaction_id"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "customer_transactions"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "transaction_id"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
       "policyItems": [],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
-      "dataMaskPolicyItems": [{"accesses": [{"type": "select", "isAllowed": true}], "users": [], "groups": ["data_analysts"], "roles": [], "conditions": [], "dataMaskInfo": {"dataMaskType": "MASK_HASH", "conditionExpr": "", "valueExpr": ""}}],
+      "dataMaskPolicyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "data_analysts"
+          ],
+          "roles": [],
+          "conditions": [],
+          "dataMaskInfo": {
+            "dataMaskType": "MASK_HASH",
+            "conditionExpr": "",
+            "valueExpr": ""
+          }
+        }
+      ],
       "rowFilterPolicyItems": []
     },
     {
       "id": 8,
-      "name": "row_filter_customers_ch",
+      "name": "row_filter_customers_by_country",
       "service": "test_db_hive",
       "policyType": 2,
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["customers"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "customers"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
       "policyItems": [],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
       "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [{"accesses": [{"type": "select", "isAllowed": true}], "users": [], "groups": ["ch_analysts"], "roles": [], "conditions": [], "rowFilterInfo": {"filterExpr": "country = 'CH'"}}]
-    },
-    {
-      "id": 9,
-      "name": "row_filter_customers_de",
-      "service": "test_db_hive",
-      "policyType": 2,
-      "isEnabled": true,
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["customers"], "isExcludes": false, "isRecursive": false}
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [{"accesses": [{"type": "select", "isAllowed": true}], "users": [], "groups": ["de_analysts"], "roles": [], "conditions": [], "rowFilterInfo": {"filterExpr": "country = 'DE'"}}]
+      "rowFilterPolicyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "ch_analysts"
+          ],
+          "roles": [],
+          "conditions": [],
+          "rowFilterInfo": {
+            "filterExpr": "country = 'CH'"
+          }
+        },
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "de_analysts"
+          ],
+          "roles": [],
+          "conditions": [],
+          "rowFilterInfo": {
+            "filterExpr": "country = 'DE'"
+          }
+        }
+      ]
     },
     {
       "id": 10,
@@ -184,15 +475,45 @@
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": {"values": ["test_db"], "isExcludes": false, "isRecursive": false},
-        "table": {"values": ["customer_transactions"], "isExcludes": false, "isRecursive": false}
+        "database": {
+          "values": [
+            "test_db"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "customer_transactions"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
       },
       "policyItems": [],
       "denyPolicyItems": [],
       "allowExceptions": [],
       "denyExceptions": [],
       "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [{"accesses": [{"type": "select", "isAllowed": true}], "users": [], "groups": ["read_only_analysts"], "roles": [], "conditions": [], "rowFilterInfo": {"filterExpr": "status = 'COMPLETED'"}}]
+      "rowFilterPolicyItems": [
+        {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [],
+          "groups": [
+            "read_only_analysts"
+          ],
+          "roles": [],
+          "conditions": [],
+          "rowFilterInfo": {
+            "filterExpr": "status = 'COMPLETED'"
+          }
+        }
+      ]
     }
   ]
 }

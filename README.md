@@ -124,7 +124,12 @@ ALTER TAG PII SET MASKING POLICY PII_AUTO_MASK;
 
 ### Ranger UI
 
-If you deploy Apache Ranger separately, the conversion script supports live export via `--ranger-url http://<ranger-host>:6080`. For this showcase, a static policy export fixture (`fixtures/ranger_policies.json`) demonstrates the same conversion flow without requiring the Ranger containers.
+The Docker stack includes Apache Ranger Admin (http://localhost:6080, user: `admin`, password: `rangerR0cks!`). The E2E script automatically:
+1. Bootstraps groups and policies into Ranger via REST API
+2. Exports policies live from Ranger
+3. Converts them to Snowflake governance SQL
+
+Alternatively, use the static fixture for offline mode: `--ranger-export fixtures/ranger_policies.json`.
 
 ---
 
@@ -141,7 +146,6 @@ workspace/output/
 ├── tag_based_masking.sql            # Single tag-based masking policy (from Ranger)
 ├── customers/
 │   ├── create_iceberg_table.sql     # CREATE ICEBERG TABLE (imperative DDL)
-│   ├── define_table.sql             # DEFINE ICEBERG TABLE (DCM declarative)
 │   ├── copy_into.sql                # COPY INTO with MATCH_BY_COLUMN_NAME
 │   ├── distcp.sh                    # hadoop distcp HDFS -> S3
 │   ├── tags.sql                     # CREATE TAG + SET TAG (table + column PII)
@@ -185,7 +189,7 @@ All generated Snowflake objects follow a consistent naming standard controlled b
 pip install pyarrow
 python3 demo-scripts/generate-fake-data.py
 
-# Start the full stack (6 containers)
+# Start the full stack (8 containers: HDFS, Hive, Hue, Ranger)
 docker compose up -d
 
 # Check all services are healthy
@@ -259,6 +263,8 @@ docker compose down -v
 | HiveServer2 | `apache/hive:4.1.0` | linux/amd64 + linux/arm64 |
 | Hue | `gethue/hue:4.11.0` | linux/amd64 (Rosetta on Apple Silicon) |
 | Hue PostgreSQL | `postgres:16-alpine` | linux/amd64 + linux/arm64 |
+| Ranger Admin | `apache/ranger:2.8.0` | linux/amd64 |
+| Ranger DB | `postgres:16-alpine` | linux/amd64 + linux/arm64 |
 
 ### Exposed Ports
 
@@ -270,6 +276,7 @@ docker compose down -v
 | Hive Metastore Thrift | 9083 | -- |
 | HiveServer2 JDBC | 10000 | `jdbc:hive2://localhost:10000/` |
 | HiveServer2 Web UI | 10002 | http://localhost:10002 |
+| Ranger Admin UI | 6080 | http://localhost:6080 |
 | Hue Web UI | 8888 | http://localhost:8888 |
 
 ### Default Credentials
@@ -279,6 +286,8 @@ docker compose down -v
 | HiveServer2 (Beeline) | hive | (no password) |
 | Hue | admin | admin (set on first visit) |
 | Hue PostgreSQL | hue | hue |
+| Ranger Admin | admin | rangerR0cks! |
+| Ranger PostgreSQL | postgres | rangerR0cks! |
 
 These credentials are for local testing only.
 
@@ -315,7 +324,7 @@ beeline -u 'jdbc:hive2://localhost:10000/'
 ```
 .
 ├── README.md
-├── docker-compose.yml               # 9-container stack (HDFS, Hive, Ranger, Hue)
+├── docker-compose.yml               # 8-container stack (HDFS, Hive, Ranger, Hue)
 ├── .env                             # Externalized image tags, ports, paths
 ├── requirements.txt                 # Python dependencies (hmsclient, thrift)
 ├── hadoop_test_stack_requirements.md
@@ -330,13 +339,15 @@ beeline -u 'jdbc:hive2://localhost:10000/'
 │   ├── hive-site.xml                # HiveServer2 web UI settings
 │   └── hue.ini                      # Hue Hive/PostgreSQL connector config
 ├── fixtures/
-│   └── ranger_policies.json         # Sample Ranger policy export (10 policies)
+│   └── ranger_policies.json         # Sample Ranger policy export (9 policies: 3 access, 4 masking, 2 row-filter)
 ├── demo-scripts/
 │   ├── generate-fake-data.py        # Generates 1650 rows across 3 tables
 │   ├── init-data.sh                 # Loads data into HDFS + Hive + TBLPROPERTIES
 │   ├── hive_hms_to_horizon_zero_copy.py  # HMS -> Snowflake DDL + DCM + tags
 │   ├── ranger_to_snowflake.py       # Ranger policies -> masking + RAP + grants
+│   ├── ranger-bootstrap.sh          # Bootstrap Ranger: groups + policies via REST API
 │   ├── export-to-s3.sh             # HDFS -> S3 upload
+│   ├── test-role-governance.sh     # Role-based governance verification tests
 │   ├── validate.sh                  # Full acceptance checklist
 │   └── run-e2e-demo.sh             # 14-step E2E demo (clean from scratch)
 ├── sqlunit/

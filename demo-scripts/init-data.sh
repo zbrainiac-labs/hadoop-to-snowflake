@@ -156,3 +156,15 @@ else
     echo "WARNING: Unexpected row counts."
     exit 1
 fi
+
+# Load Ranger policies if Ranger is available
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if curl -sf -u admin:rangerR0cks! "http://localhost:6080/login.jsp" > /dev/null 2>&1; then
+    echo ""
+    echo "[8/7] Loading Ranger policies (Ranger detected)..."
+    bash "$SCRIPT_DIR/ranger-bootstrap.sh" 2>&1 | grep -E "OK|SKIP|Complete|registered"
+else
+    echo ""
+    echo "[INFO] Ranger not running -- skipping policy bootstrap."
+    echo "       Policies available as fixture: fixtures/ranger_policies.json"
+fi

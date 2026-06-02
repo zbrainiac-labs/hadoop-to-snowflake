@@ -175,12 +175,64 @@ services:
           memory: ${CONTAINER_MEMORY_LIMIT}
           cpus: "${CONTAINER_CPU_LIMIT}"
 
+  ranger-db:
+    image: postgres:16-alpine
+    container_name: ranger-db
+    hostname: ranger-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: rangerR0cks!
+      POSTGRES_DB: ranger
+    volumes:
+      - ranger-db-data:/var/lib/postgresql/data
+    networks:
+      hadoop-test-net:
+        aliases:
+          - ranger-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  ranger-admin:
+    image: apache/ranger:2.8.0
+    container_name: ranger-admin
+    hostname: ranger-admin
+    ports:
+      - "6080:6080"
+    environment:
+      POSTGRES_PASSWORD: rangerR0cks!
+      RANGER_DB_USER: ranger
+      RANGER_DB_PASSWORD: rangerR0cks!
+    depends_on:
+      ranger-db:
+        condition: service_healthy
+    networks:
+      hadoop-test-net:
+        aliases:
+          - ranger-admin
+          - ranger-admin.rangernw
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:6080/login.jsp || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 180s
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+          cpus: "${CONTAINER_CPU_LIMIT}"
+
 volumes:
   hdfs-namenode:
   hdfs-datanode:
   metastore-derby:
   hive-warehouse:
   hue-postgres-data:
+  ranger-db-data:
 
 networks:
   hadoop-test-net:

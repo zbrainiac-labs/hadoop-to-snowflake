@@ -75,11 +75,11 @@ def load_ranger_export(file_path: str) -> dict:
 
 
 def generate_snowflake_name(table_name: str, args) -> str:
-    return f"{args.domain}{args.component}_{args.maturity}_TB_{table_name.upper()}"
+    return "{{domain}}{{component}}_{{maturity}}_TB_" + table_name.upper()
 
 
 def generate_schema_fqn(args) -> str:
-    return f"{args.domain}_{args.env}.{args.domain}_{args.maturity}_V{args.version}"
+    return "{{domain}}_{{env}}.{{domain}}_{{maturity}}_V{{version}}"
 
 
 def generate_tag_based_masking_sql(masking_policies: list, args) -> str:

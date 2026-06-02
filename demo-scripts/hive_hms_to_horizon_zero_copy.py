@@ -207,10 +207,7 @@ def generate_stage_name(args) -> str:
 
 
 def generate_create_iceberg_ddl(meta: dict, args) -> str:
-    db_name = generate_database_name(args)
-    schema_name = generate_schema_name(args)
-    table_name = generate_snowflake_name(meta["table_name"], args)
-
+    """Generate templated CREATE ICEBERG TABLE DDL."""
     all_columns = meta["columns"] + meta["partition_keys"]
 
     col_defs = []
@@ -221,7 +218,10 @@ def generate_create_iceberg_ddl(meta: dict, args) -> str:
             line += f" COMMENT '{escape_comment(col['comment'])}'"
         col_defs.append(line)
 
-    ddl = f"CREATE OR REPLACE ICEBERG TABLE {db_name}.{schema_name}.{table_name} (\n"
+    table_suffix = meta["table_name"].upper()
+    fqn = "{{domain}}_{{env}}.{{domain}}_{{maturity}}_V{{version}}.{{domain}}{{component}}_{{maturity}}_TB_" + table_suffix
+
+    ddl = f"CREATE OR REPLACE ICEBERG TABLE {fqn} (\n"
     ddl += ",\n".join(col_defs)
     ddl += "\n)"
 
@@ -229,24 +229,28 @@ def generate_create_iceberg_ddl(meta: dict, args) -> str:
     if table_comment:
         ddl += f"\nCOMMENT = '{escape_comment(table_comment)}'"
 
-    ddl += f"\nCATALOG = 'SNOWFLAKE'"
-    ddl += f"\nEXTERNAL_VOLUME = '{args.external_volume}'"
+    ddl += "\nCATALOG = 'SNOWFLAKE'"
+    ddl += "\nEXTERNAL_VOLUME = '{{external_volume}}'"
 
-    base_location = f"{meta['database']}/{meta['table_name']}"
+    base_location = f"{{{{hive_database}}}}/{meta['table_name']}"
     ddl += f"\nBASE_LOCATION = '{base_location}';"
 
     return ddl
 
 
 def generate_copy_into(meta: dict, args) -> str:
-    db_name = generate_database_name(args)
-    schema_name = generate_schema_name(args)
-    table_name = generate_snowflake_name(meta["table_name"], args)
-    stage_fqn = f"{db_name}.{schema_name}.{generate_stage_name(args)}"
-    stage_path = f"@{stage_fqn}/{meta['database']}/{meta['table_name']}/"
+    """Generate templated COPY INTO statement."""
+    schema_fqn = "{{domain}}_{{env}}.{{domain}}_{{maturity}}_V{{version}}"
+    table_suffix = meta["table_name"].upper()
+    table_fqn = f"{schema_fqn}.{{{{domain}}}}{{{{component}}}}_{{{{maturity}}}}_TB_{table_suffix}"
+    stage_fqn = f"{schema_fqn}.{{{{domain}}}}{{{{component}}}}_{{{{maturity}}}}_ST_ICEBERG"
+    stage_path = f"@{stage_fqn}/{{{{hive_database}}}}/{meta['table_name']}/"
 
-    return f"""COPY INTO {db_name}.{schema_name}.{table_name}
-FROM {stage_path}
+    table_ref = "{{domain}}_{{env}}.{{domain}}_{{maturity}}_V{{version}}.{{domain}}{{component}}_{{maturity}}_TB_" + table_suffix
+    stage_ref = "{{domain}}_{{env}}.{{domain}}_{{maturity}}_V{{version}}.{{domain}}{{component}}_{{maturity}}_ST_ICEBERG"
+
+    return f"""COPY INTO {table_ref}
+FROM @{stage_ref}/{{{{hive_database}}}}/{meta['table_name']}/
 FILE_FORMAT = (TYPE = PARQUET)
 MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;"""
 
@@ -260,11 +264,10 @@ TAG_ALLOWED_VALUES = {
 
 
 def generate_tags_sql(meta: dict, args) -> str:
-    db_name = generate_database_name(args)
-    schema_name = generate_schema_name(args)
-    table_name = generate_snowflake_name(meta["table_name"], args)
-    fqn = f"{db_name}.{schema_name}.{table_name}"
-    tag_schema = f"{db_name}.{schema_name}"
+    table_suffix = meta["table_name"].upper()
+    tag_schema = "{{domain}}_{{env}}.{{domain}}_{{maturity}}_V{{version}}"
+    table_fqn = f"{tag_schema}.{{{{domain}}}}{{{{component}}}}_{{{{maturity}}}}_TB_{table_suffix}"
+    fqn = "{{domain}}_{{env}}.{{domain}}_{{maturity}}_V{{version}}.{{domain}}{{component}}_{{maturity}}_TB_" + table_suffix
 
     lines = []
 
@@ -314,10 +317,7 @@ def generate_tags_sql(meta: dict, args) -> str:
 
 
 def generate_dcm_table_definition(meta: dict, args) -> str:
-    db_name = generate_database_name(args)
-    schema_name = generate_schema_name(args)
-    table_name = generate_snowflake_name(meta["table_name"], args)
-
+    """Generate templated DEFINE TABLE for DCM sources/definitions/."""
     all_columns = meta["columns"] + meta["partition_keys"]
 
     col_defs = []
@@ -328,7 +328,10 @@ def generate_dcm_table_definition(meta: dict, args) -> str:
             line += f" COMMENT '{escape_comment(col['comment'])}'"
         col_defs.append(line)
 
-    ddl = f"DEFINE ICEBERG TABLE {db_name}.{schema_name}.{table_name} (\n"
+    table_suffix = meta["table_name"].upper()
+    fqn = "{{domain}}_{{env}}.{{domain}}_{{maturity}}_V{{version}}.{{domain}}{{component}}_{{maturity}}_TB_" + table_suffix
+
+    ddl = f"DEFINE TABLE {fqn} (\n"
     ddl += ",\n".join(col_defs)
     ddl += "\n)"
 
@@ -336,10 +339,10 @@ def generate_dcm_table_definition(meta: dict, args) -> str:
     if table_comment:
         ddl += f"\nCOMMENT = '{escape_comment(table_comment)}'"
 
-    ddl += f"\nCATALOG = 'SNOWFLAKE'"
-    ddl += f"\nEXTERNAL_VOLUME = '{args.external_volume}'"
+    ddl += "\nCATALOG = 'SNOWFLAKE'"
+    ddl += "\nEXTERNAL_VOLUME = '{{external_volume}}'"
 
-    base_location = f"{meta['database']}/{meta['table_name']}"
+    base_location = f"{{{{hive_database}}}}/{meta['table_name']}"
     ddl += f"\nBASE_LOCATION = '{base_location}';"
 
     return ddl
@@ -495,10 +498,6 @@ def process_database(args):
 
         with open(os.path.join(table_dir, "properties.json"), "w") as f:
             json.dump(meta["parameters"], f, indent=2)
-
-        dcm_define = generate_dcm_table_definition(meta, args)
-        with open(os.path.join(table_dir, "define_table.sql"), "w") as f:
-            f.write(dcm_define)
 
         tags_sql = generate_tags_sql(meta, args)
         with open(os.path.join(table_dir, "tags.sql"), "w") as f:
