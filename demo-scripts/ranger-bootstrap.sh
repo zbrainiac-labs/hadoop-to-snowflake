@@ -4,9 +4,17 @@ set -euo pipefail
 # Bootstrap Ranger with sample Hive policies for the migration demo.
 # Registers a Hive service and loads 10 policies (access, masking, row-filter).
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Load environment variables from .env
+if [ -f "$PROJECT_DIR/.env" ]; then
+    set -a; source "$PROJECT_DIR/.env"; set +a
+fi
+
 RANGER_URL="${RANGER_URL:-http://localhost:6080}"
 RANGER_USER="admin"
-RANGER_PASS="rangerR0cks!"
+RANGER_PASS="${RANGER_ADMIN_PASSWORD:?Set RANGER_ADMIN_PASSWORD in .env}"
 SERVICE_NAME="test_db_hive"
 
 echo "=== Ranger Policy Bootstrap ==="
@@ -145,7 +153,7 @@ for policy in data['policies']:
 
 echo ""
 echo "=== Bootstrap Complete ==="
-echo "  Ranger UI: $RANGER_URL (admin/rangerR0cks!)"
+echo "  Ranger UI: $RANGER_URL (admin/****)"
 echo "  Service: $SERVICE_NAME"
-echo "  Export: curl -u admin:rangerR0cks! $RANGER_URL/service/plugins/policies/exportJson?serviceName=$SERVICE_NAME"
+echo "  Export: curl -u admin:\$RANGER_ADMIN_PASSWORD $RANGER_URL/service/plugins/policies/exportJson?serviceName=$SERVICE_NAME"
 echo ""

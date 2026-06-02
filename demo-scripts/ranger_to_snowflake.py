@@ -334,7 +334,7 @@ def main():
 
     parser.add_argument("--service-name", default="test_db_hive", help="Ranger service name (default: test_db_hive)")
     parser.add_argument("--ranger-user", default="admin", help="Ranger admin username (default: admin)")
-    parser.add_argument("--ranger-password", default="rangerR0cks!", help="Ranger admin password")
+    parser.add_argument("--ranger-password", default=os.environ.get("RANGER_ADMIN_PASSWORD", ""), help="Ranger admin password (default: from RANGER_ADMIN_PASSWORD env var)")
 
     parser.add_argument("--domain", default="HAM", help="Naming standard: domain code")
     parser.add_argument("--env", default="DEV", help="Naming standard: environment")

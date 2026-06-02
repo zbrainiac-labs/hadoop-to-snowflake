@@ -1,6 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
+# Load environment variables from .env
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+if [ -f "$PROJECT_DIR/.env" ]; then
+    set -a; source "$PROJECT_DIR/.env"; set +a
+fi
+
 HIVE_JDBC="jdbc:hive2://hiveserver2:10000/"
 HDFS_WAREHOUSE="/user/hive/warehouse/test_db.db"
 
@@ -158,8 +165,7 @@ else
 fi
 
 # Load Ranger policies if Ranger is available
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-if curl -sf -u admin:rangerR0cks! "http://localhost:6080/login.jsp" > /dev/null 2>&1; then
+if curl -sf -u admin:${RANGER_ADMIN_PASSWORD:?Set RANGER_ADMIN_PASSWORD in .env} "http://localhost:6080/login.jsp" > /dev/null 2>&1; then
     echo ""
     echo "[8/7] Loading Ranger policies (Ranger detected)..."
     bash "$SCRIPT_DIR/ranger-bootstrap.sh" 2>&1 | grep -E "OK|SKIP|Complete|registered"

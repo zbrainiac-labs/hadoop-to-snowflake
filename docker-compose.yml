@@ -181,7 +181,7 @@ services:
     hostname: ranger-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: rangerR0cks!
+      POSTGRES_PASSWORD: ${RANGER_DB_ROOT_PASSWORD}
       POSTGRES_DB: ranger
     volumes:
       - ranger-db-data:/var/lib/postgresql/data
@@ -201,11 +201,11 @@ services:
     container_name: ranger-admin
     hostname: ranger-admin
     ports:
-      - "6080:6080"
+      - "${RANGER_PORT}:6080"
     environment:
-      POSTGRES_PASSWORD: rangerR0cks!
-      RANGER_DB_USER: ranger
-      RANGER_DB_PASSWORD: rangerR0cks!
+      POSTGRES_PASSWORD: ${RANGER_DB_ROOT_PASSWORD}
+      RANGER_DB_USER: ${RANGER_DB_USER}
+      RANGER_DB_PASSWORD: ${RANGER_DB_PASSWORD}
     depends_on:
       ranger-db:
         condition: service_healthy

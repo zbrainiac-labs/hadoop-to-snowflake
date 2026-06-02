@@ -11,6 +11,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
+# Load environment variables from .env
+if [ -f .env ]; then
+    set -a; source .env; set +a
+fi
+
 HIVE_DATABASE="test_db"
 S3_PREFIX="s3://mdaeppen/hadoop-root"
 EXTERNAL_VOLUME="HAM_ICEBERG_VOL"
@@ -21,6 +26,7 @@ COMPONENT="I"
 MATURITY="RAW"
 VERSION="001"
 SNOW_CONN="${SNOW_CONN:-zs28104-svc_mdaeppen}"
+RANGER_PASS="${RANGER_ADMIN_PASSWORD:?Set RANGER_ADMIN_PASSWORD in .env}"
 
 SF_DATABASE="${DOMAIN}_${ENV}"
 SF_SCHEMA="${DOMAIN}_${MATURITY}_V${VERSION}"
@@ -131,7 +137,7 @@ step_result 0
 # ============================================================
 echo "[4/14] Waiting for Ranger Admin..."
 RETRIES=0
-until curl -sf -u admin:rangerR0cks! "http://localhost:6080/login.jsp" > /dev/null 2>&1; do
+until curl -sf -u admin:${RANGER_PASS} "http://localhost:6080/login.jsp" > /dev/null 2>&1; do
     RETRIES=$((RETRIES + 1))
     if [ "$RETRIES" -gt 36 ]; then
         echo "  TIMEOUT: Ranger not ready after 180s (continuing without live Ranger)"
@@ -158,7 +164,7 @@ step_result $?
 
 # ============================================================
 echo "[7/14] Exporting HMS metadata + Ranger policies -> Snowflake artifacts..."
-RANGER_AVAILABLE=$(curl -sf -o /dev/null -w "%{http_code}" -u admin:rangerR0cks! "http://localhost:6080/service/plugins/policies/exportJson" 2>/dev/null || echo "000")
+RANGER_AVAILABLE=$(curl -sf -o /dev/null -w "%{http_code}" -u admin:${RANGER_PASS} "http://localhost:6080/service/plugins/policies/exportJson" 2>/dev/null || echo "000")
 if [ "$RANGER_AVAILABLE" = "200" ]; then
     echo "  Ranger live at http://localhost:6080 -- bootstrapping policies..."
     ./demo-scripts/ranger-bootstrap.sh 2>&1 | grep -E "OK|SKIP|Complete|registered" || true
@@ -257,14 +263,14 @@ step_result 0
 echo "[12/14] VERIFY: Masking works for DATA_ANALYSTS role..."
 # CICD role is in the privileged list, so it sees unmasked data
 echo "  Query as CICD (unmasked - privileged role):"
-UNMASKED=$(snow sql -q "SELECT EMAIL, FIRST_NAME FROM ${SF_DATABASE}.${SF_SCHEMA}.HAMI_RAW_TB_CUSTOMERS LIMIT 1" -c "$SNOW_CONN" 2>/dev/null)
+UNMASKED=$(snow sql -q "SELECT EMAIL, FIRST_NAME FROM ${SF_DATABASE}.${SF_SCHEMA}.HAMI_RAW_TB_CUSTOMERS LIMIT 1" -c "$SNOW_CONN" 2>/dev/null) || true
 echo "    $UNMASKED" | head -4
 
 # For masked verification: use personal connection with DATA_ANALYSTS role
 # If personal connection not available, verify via policy metadata
 VERIFY_CONN="${SNOW_VERIFY_CONN:-sfseeurope-demo_mdaeppen}"
 echo "  Query as DATA_ANALYSTS (masked) via $VERIFY_CONN:"
-MASKED=$(snow sql -q "SELECT EMAIL, FIRST_NAME FROM ${SF_DATABASE}.${SF_SCHEMA}.HAMI_RAW_TB_CUSTOMERS LIMIT 1" -c "$VERIFY_CONN" --role DATA_ANALYSTS 2>/dev/null)
+MASKED=$(snow sql -q "SELECT EMAIL, FIRST_NAME FROM ${SF_DATABASE}.${SF_SCHEMA}.HAMI_RAW_TB_CUSTOMERS LIMIT 1" -c "$VERIFY_CONN" --role DATA_ANALYSTS 2>/dev/null) || true
 echo "    $MASKED" | head -4
 
 # Check that masked output contains SHA-256 hash (64 hex chars) or masked pattern
