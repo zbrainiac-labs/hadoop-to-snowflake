@@ -5,12 +5,20 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# OIDC (id-token) + GitHub release (contents) for the reusable pipeline
+permissions:
+  id-token: write
+  contents: write
+  actions: read
+  checks: write
+
 jobs:
   pipeline:
     uses: zbrainiac-labs/DataOpsBackbone/.github/workflows/dataops-pipeline.yml@main
     with:
       SOURCE_DATABASE: HAM_DEV
-      SOURCE_SCHEMA: HAM_DCM
+      SOURCE_SCHEMA: HAM_RAW_v001
       DCM_PROJECT_IDENTIFIER: HAM_DEV.HAM_DCM.HAM_DCM_PROJECT
       DCM_TARGET: DEV
+      SNOWFLAKE_ACCOUNT: SFSEEUROPE-DEMO_MDAEPPEN
     secrets: inherit
