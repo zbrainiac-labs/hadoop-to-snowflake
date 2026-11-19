@@ -1,0 +1,37 @@
+name: CI / Deploy
+
+# DataOps pipeline via the DataOpsBackbone reusable workflow.
+#   pull_request  prepare + scan (SQLFluff, SonarQube), no deploy (DRY_RUN)
+#   push to main  full run: DCM deploy -> validate -> release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# OIDC (id-token) + GitHub release (contents) for the reusable pipeline
+permissions:
+  id-token: write
+  contents: write
+  actions: read
+  checks: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # never cancel a running deploy on main
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pipeline:
+    # self-hosted runners: never run code from a fork pull request
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    uses: zbrainiac-labs/DataOpsBackbone/.github/workflows/dataops-pipeline.yml@v1
+    with:
+      SOURCE_DATABASE: HAM_DEV
+      SOURCE_SCHEMA: HAM_RAW_v001
+      DCM_PROJECT_IDENTIFIER: HAM_DEV.HAM_DCM.HAM_DCM_PROJECT
+      DCM_TARGET: DEV
+      SNOWFLAKE_ACCOUNT: SFSEEUROPE-DEMO_MDAEPPEN
+      DRY_RUN: ${{ github.event_name == 'pull_request' }}
+    secrets: inherit
